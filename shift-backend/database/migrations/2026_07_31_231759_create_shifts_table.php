@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('shift_types', function (Blueprint $table) {
+        Schema::create('shifts', function (Blueprint $table) {
             $table->id();
             $table->string('name');       // Nombre (Ej: Turno Mañana)
             $table->string('start_time'); // Hora inicio (Ej: 08:00 AM)
@@ -20,6 +20,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('shift_types');
+        Schema::dropIfExists('shifts');
     }
 };
