@@ -16,10 +16,10 @@ export default function DashboardView() {
         const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' };
 
         const [resEmp, resShifts, resReq] = await Promise.all([
-          fetch('http://127.0.0.1:8000/api/employees', { headers }),
-          fetch('http://127.0.0.1:8000/api/shifts', { headers }),
-          fetch('http://127.0.0.1:8000/api/shift-swaps', { headers }) // <-- Conectamos al nuevo buzón
-        ]);
+  fetch(`${import.meta.env.VITE_API_URL}/employees`, { headers }),
+  fetch(`${import.meta.env.VITE_API_URL}/shifts`, { headers }),
+  fetch(`${import.meta.env.VITE_API_URL}/shift-swaps`, { headers }) 
+]);
 
         if (resEmp.ok) setEmployees(await resEmp.json());
         if (resShifts.ok) setShifts(await resShifts.json());
@@ -35,7 +35,7 @@ export default function DashboardView() {
   const handleAction = async (id, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://127.0.0.1:8000/api/shift-swaps/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/shift-swaps/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
