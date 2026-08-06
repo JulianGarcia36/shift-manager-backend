@@ -1,14 +1,32 @@
-public function up()
-{
-    Schema::table('shifts', function (Blueprint $table) {
-        // Agregamos la columna faltante
-        $table->unsignedBigInteger('employee_id')->nullable()->after('id');
-    });
-}
+<?php
 
-public function down()
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class AddEmployeeIdToShiftsTable extends Migration
 {
-    Schema::table('shifts', function (Blueprint $table) {
-        $table->dropColumn('employee_id');
-    });
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::table('shifts', function (Blueprint $table) {
+            $table->unsignedBigInteger('employee_id')->nullable()->after('id');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::table('shifts', function (Blueprint $table) {
+            $table->dropColumn('employee_id');
+        });
+    }
 }
