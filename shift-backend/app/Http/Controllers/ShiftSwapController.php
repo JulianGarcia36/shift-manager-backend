@@ -17,11 +17,15 @@ class ShiftSwapController extends Controller
     // NUEVO: Método exclusivo y garantizado para el buzón público
     public function publicStore(Request $request)
     {
+        $validated = $request->validate([
+            'shift_id' => 'required|exists:shifts,id',
+            'requesting_employee_id' => 'required|exists:employees,id',
+            'reason' => 'nullable|string',
+        ]);
+
         $swap = ShiftSwap::create([
-            'shift_id' => $request->shift_id,
-            'requesting_employee_id' => $request->requesting_employee_id,
-            'reason' => $request->reason,
-            'status' => 'pending'
+            ...$validated,
+            'status' => 'pending',
         ]);
         return response()->json($swap, 201);
     }
@@ -35,11 +39,16 @@ class ShiftSwapController extends Controller
     // 3. El Admin aprueba o rechaza el cambio
     public function update(Request $request, $id)
     {
-        $swap = ShiftSwap::find($id);
-        $swap->status = $request->status;
-        
-        if ($request->has('suggested_employee_id')) {
-            $swap->suggested_employee_id = $request->suggested_employee_id;
+        $validated = $request->validate([
+            'status' => 'required|in:pending,approved,rejected',
+            'suggested_employee_id' => 'nullable|exists:employees,id',
+        ]);
+
+        $swap = ShiftSwap::findOrFail($id);
+        $swap->status = $validated['status'];
+
+        if (array_key_exists('suggested_employee_id', $validated)) {
+            $swap->suggested_employee_id = $validated['suggested_employee_id'];
         }
         $swap->save();
 

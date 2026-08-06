@@ -36,8 +36,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/shifts/{shift}', [ShiftController::class, 'update']);
     Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy']);
 
-    // Tipos de Turnos Predeterminados
-    Route::apiResource('shift-types', App\Http\Controllers\ShiftTypeController::class);
+    // Tipos de Turnos Predeterminados (el controlador solo implementa index/store/destroy)
+    Route::apiResource('shift-types', App\Http\Controllers\ShiftTypeController::class)
+        ->only(['index', 'store', 'destroy']);
 
     // Ausencias y Permisos
     Route::apiResource('absences', App\Http\Controllers\AbsenceController::class);

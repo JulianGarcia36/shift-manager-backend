@@ -15,14 +15,21 @@ class ShiftTypeController extends Controller
     // Guardar una nueva plantilla
     public function store(Request $request)
     {
-        $shiftType = ShiftType::create($request->all());
-        return response()->json($shiftType);
+        $validated = $request->validate([
+            'name'       => 'required|string',
+            'start_time' => 'required|string',
+            'end_time'   => 'required|string',
+            'color'      => 'required|string',
+        ]);
+
+        $shiftType = ShiftType::create($validated);
+        return response()->json($shiftType, 201);
     }
 
     // Eliminar una plantilla
     public function destroy($id)
     {
-        ShiftType::destroy($id);
+        ShiftType::findOrFail($id)->delete();
         return response()->json(['message' => 'Eliminado correctamente']);
     }
 }
