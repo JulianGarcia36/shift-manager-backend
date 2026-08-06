@@ -31,13 +31,13 @@ export default function WeeklyBoard() {
       const token = localStorage.getItem('token');
       const headers = { 'Authorization': `Bearer ${token}` };
       
-      const resEmp = await fetch('http://${import.meta.env.VITE_API_URL}/api/employees', { headers });
+      const resEmp = await fetch('${import.meta.env.VITE_API_URL}/api/employees', { headers });
       setEmployees(await resEmp.json());
       
-      const resShifts = await fetch('http://${import.meta.env.VITE_API_URL}/api/shifts', { headers });
+      const resShifts = await fetch('${import.meta.env.VITE_API_URL}/api/shifts', { headers });
       setShifts(await resShifts.json());
 
-      const resTypes = await fetch('http://${import.meta.env.VITE_API_URL}/api/shift-types', { headers });
+      const resTypes = await fetch('${import.meta.env.VITE_API_URL}/api/shift-types', { headers });
       setShiftTypes(await resTypes.json());
     } catch (error) { console.error("Error cargando datos:", error); }
   };
@@ -97,7 +97,7 @@ export default function WeeklyBoard() {
     if (!window.confirm("¿Estás seguro de eliminar este turno?")) return;
     const token = localStorage.getItem('token');
     try {
-      await fetch(`http://${import.meta.env.VITE_API_URL}/api/shifts/${shiftId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+      await fetch(`${import.meta.env.VITE_API_URL}/api/shifts/${shiftId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
       setShifts(prev => prev.filter(s => s.id !== parseInt(shiftId)));
     } catch (error) { console.error("Error eliminando:", error); }
   };
@@ -121,7 +121,7 @@ export default function WeeklyBoard() {
 
     // Guardado silencioso en la Base de Datos
     const token = localStorage.getItem('token');
-    await fetch(`http://${import.meta.env.VITE_API_URL}/api/shifts/${shiftId}`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/shifts/${shiftId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ 
@@ -139,7 +139,7 @@ export default function WeeklyBoard() {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      await fetch('http://${import.meta.env.VITE_API_URL}/api/shifts', {
+      await fetch('${import.meta.env.VITE_API_URL}/api/shifts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(newShift)

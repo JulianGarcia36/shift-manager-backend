@@ -14,7 +14,7 @@ export default function EmployeePublicView() {
     const loadEmployeeData = async () => {
       try {
         // 1. Buscamos al empleado
-        const resEmp = await fetch('http://${import.meta.env.VITE_API_URL}/api/employees');
+        const resEmp = await fetch('${import.meta.env.VITE_API_URL}/api/employees');
         const employees = await resEmp.json();
         
         // Encontramos al empleado cuyo nombre coincida con el enlace (ignorando mayúsculas)
@@ -24,7 +24,7 @@ export default function EmployeePublicView() {
           setEmployee(foundEmp);
           
           // 2. Si existe, buscamos sus turnos
-          const resShifts = await fetch('http://${import.meta.env.VITE_API_URL}/api/shifts');
+          const resShifts = await fetch('${import.meta.env.VITE_API_URL}/api/shifts');
           const allShifts = await resShifts.json();
           
           // Filtramos solo los turnos de este empleado y los ordenamos por fecha
