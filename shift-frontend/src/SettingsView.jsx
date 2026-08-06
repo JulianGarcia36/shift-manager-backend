@@ -19,7 +19,7 @@ export default function SettingsView() {
   // Cargar sub-administradores al abrir la pestaña
   useEffect(() => {
     if (activeTab === 'security') {
-      fetch('${import.meta.env.VITE_API_URL}/api/users', {
+      fetch(`${import.meta.env.VITE_API_URL}/api/users`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`, 'Accept': 'application/json' }
       }).then(res => res.json()).then(data => setSubAdmins(data));
     }
@@ -39,13 +39,13 @@ export default function SettingsView() {
           'Accept': 'application/json' 
         };
         
-        const resSettings = await fetch('${import.meta.env.VITE_API_URL}/api/settings', { headers });
+        const resSettings = await fetch(`${import.meta.env.VITE_API_URL}/api/settings`, { headers });
         if (resSettings.ok) {
           const dataSettings = await resSettings.json();
           if (dataSettings.id) setFormData(dataSettings);
         }
 
-        const resTypes = await fetch('${import.meta.env.VITE_API_URL}/api/shift-types', { headers });
+        const resTypes = await fetch(`${import.meta.env.VITE_API_URL}/api/shift-types`, { headers });
         if (resTypes.ok) {
           setShiftTypes(await resTypes.json());
         }
@@ -63,7 +63,7 @@ export default function SettingsView() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('${import.meta.env.VITE_API_URL}/api/settings', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/settings`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json', 
@@ -99,7 +99,7 @@ export default function SettingsView() {
     setIsChangingPwd(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('${import.meta.env.VITE_API_URL}/api/user/password', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -130,7 +130,7 @@ export default function SettingsView() {
   const handleAddSubAdmin = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-    const res = await fetch('${import.meta.env.VITE_API_URL}/api/users', {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify(newAdmin)
@@ -158,7 +158,7 @@ export default function SettingsView() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('${import.meta.env.VITE_API_URL}/api/shift-types', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/shift-types`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
