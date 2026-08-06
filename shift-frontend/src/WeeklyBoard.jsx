@@ -97,7 +97,7 @@ export default function WeeklyBoard() {
     if (!window.confirm("¿Estás seguro de eliminar este turno?")) return;
     const token = localStorage.getItem('token');
     try {
-      await fetch(import.meta.env.VITE_API_URL + '/shifts/${shiftId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
+      await fetch(import.meta.env.VITE_API_URL + '/shifts/' + shiftId, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }});
       setShifts(prev => prev.filter(s => s.id !== parseInt(shiftId)));
     } catch (error) { console.error("Error eliminando:", error); }
   };
@@ -121,7 +121,7 @@ export default function WeeklyBoard() {
 
     // Guardado silencioso en la Base de Datos
     const token = localStorage.getItem('token');
-    await fetch(import.meta.env.VITE_API_URL + '/shifts/${shiftId}`, {
+    await fetch(import.meta.env.VITE_API_URL + '/shifts/' + shiftId, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ 
