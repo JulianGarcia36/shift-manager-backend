@@ -27,7 +27,7 @@ export default function EmployeesView() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const url = editingId ? import.meta.env.VITE_API_URL + '/employees/${editingId}` : import.meta.env.VITE_API_URL + '/employees';
+    const url = editingId ? import.meta.env.VITE_API_URL + '/employees/' + editingId : import.meta.env.VITE_API_URL + '/employees';
     const method = editingId ? 'PUT' : 'POST';
     const token = localStorage.getItem('token'); // Sacamos la llave
 
