@@ -14,7 +14,13 @@ export default function EmployeesView() {
 
   const loadEmployees = async () => {
     try {
-      const response = await fetch(import.meta.env.VITE_API_URL + '/employees');
+      const token = localStorage.getItem('token'); // <-- ¡Agregamos la llave aquí!
+      const response = await fetch(import.meta.env.VITE_API_URL + '/employees', {
+        headers: { 
+          'Authorization': 'Bearer ' + token, // <-- Se la mostramos al servidor
+          'Accept': 'application/json'
+        }
+      });
       setEmployees(await response.json());
     } catch (error) {
       console.error("Error al cargar empleados:", error);
@@ -29,14 +35,14 @@ export default function EmployeesView() {
 
     const url = editingId ? import.meta.env.VITE_API_URL + '/employees/' + editingId : import.meta.env.VITE_API_URL + '/employees';
     const method = editingId ? 'PUT' : 'POST';
-    const token = localStorage.getItem('token'); // Sacamos la llave
+    const token = localStorage.getItem('token'); 
 
     try {
       await fetch(url, {
         method: method,
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Mostramos la llave a Laravel
+          'Authorization': 'Bearer ' + token 
         },
         body: JSON.stringify(formData)
       });
@@ -65,9 +71,12 @@ export default function EmployeesView() {
     const token = localStorage.getItem('token');
 
     try {
-      await fetch(import.meta.env.VITE_API_URL + '/employees/${id}`, { 
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` } // Mostramos la llave para borrar
+      await fetch(import.meta.env.VITE_API_URL + '/employees/' + id, {
+        method: 'DELETE', // <-- Importante decirle que la acción es borrar
+        headers: { 
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/json'
+        } 
       });
       loadEmployees();
     } catch (error) {
