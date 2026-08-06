@@ -18,7 +18,7 @@ export default function DashboardLayout() {
         const token = localStorage.getItem('token');
         if (!token) return;
         
-        const response = await fetch('http://127.0.0.1:8000/api/settings', {
+        const response = await fetch('http://${import.meta.env.VITE_API_URL}/api/settings', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -39,7 +39,7 @@ export default function DashboardLayout() {
     const token = localStorage.getItem('token');
     try {
       if (token) {
-        await fetch('http://127.0.0.1:8000/api/logout', {
+        await fetch('http://${import.meta.env.VITE_API_URL}/api/logout', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
         });
