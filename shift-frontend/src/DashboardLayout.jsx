@@ -18,8 +18,9 @@ export default function DashboardLayout() {
         const token = localStorage.getItem('token');
         if (!token) return;
         
-        const response = await fetch('${import.meta.env.VITE_API_URL}/settings', {
-          headers: { 'Authorization': `Bearer ${token}` }
+        // FÍJATE AQUÍ: Usamos el signo + en lugar de las llaves y comillas raras
+        const response = await fetch(import.meta.env.VITE_API_URL + '/settings', {
+          headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await response.json();
         
@@ -39,9 +40,10 @@ export default function DashboardLayout() {
     const token = localStorage.getItem('token');
     try {
       if (token) {
-        await fetch('${import.meta.env.VITE_API_URL}/logout', {
+        // FÍJATE AQUÍ TAMBIÉN: Sumamos la variable con el texto usando +
+        await fetch(import.meta.env.VITE_API_URL + '/logout', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+          headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
         });
       }
     } catch (error) {
