@@ -14,12 +14,12 @@ export default function EmployeePortal() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const resEmp = await fetch('${import.meta.env.VITE_API_URL}/employees');
+        const resEmp = await fetch(import.meta.env.VITE_API_URL + '/employees');
         const allEmps = await resEmp.json();
         const myEmp = allEmps.find(e => e.id === parseInt(employeeId));
         setEmployee(myEmp);
 
-        const resShifts = await fetch('${import.meta.env.VITE_API_URL}/shifts');
+        const resShifts = await fetch(import.meta.env.VITE_API_URL + '/shifts');
         const allShifts = await resShifts.json();
         const myShifts = allShifts.filter(s => s.employee_id === parseInt(employeeId));
         
@@ -35,7 +35,7 @@ export default function EmployeePortal() {
   const handleRequestSwap = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('${import.meta.env.VITE_API_URL}/public-shift-swaps', {
+      const res = await fetch(import.meta.env.VITE_API_URL + '/public-shift-swaps', {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json', 

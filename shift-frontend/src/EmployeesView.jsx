@@ -14,7 +14,7 @@ export default function EmployeesView() {
 
   const loadEmployees = async () => {
     try {
-      const response = await fetch('${import.meta.env.VITE_API_URL}/employees');
+      const response = await fetch(import.meta.env.VITE_API_URL + '/employees');
       setEmployees(await response.json());
     } catch (error) {
       console.error("Error al cargar empleados:", error);
@@ -27,7 +27,7 @@ export default function EmployeesView() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const url = editingId ? `${import.meta.env.VITE_API_URL}/employees/${editingId}` : '${import.meta.env.VITE_API_URL}/employees';
+    const url = editingId ? import.meta.env.VITE_API_URL + '/employees/${editingId}` : import.meta.env.VITE_API_URL + '/employees';
     const method = editingId ? 'PUT' : 'POST';
     const token = localStorage.getItem('token'); // Sacamos la llave
 
@@ -65,7 +65,7 @@ export default function EmployeesView() {
     const token = localStorage.getItem('token');
 
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/employees/${id}`, { 
+      await fetch(import.meta.env.VITE_API_URL + '/employees/${id}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` } // Mostramos la llave para borrar
       });
