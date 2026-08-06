@@ -6,7 +6,7 @@ import { es } from 'date-fns/locale';
 export default function DashboardView() {
   const [employees, setEmployees] = useState([]);
   const [shifts, setShifts] = useState([]);
-  const [requests, setRequests] = useState([]); // <-- Cambiamos absences por requests (shift-swaps)
+  const [requests, setRequests] = useState([]); 
 
   // Cargar todos los datos al entrar
   useEffect(() => {
@@ -16,10 +16,10 @@ export default function DashboardView() {
         const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' };
 
         const [resEmp, resShifts, resReq] = await Promise.all([
-  fetch(import.meta.env.VITE_API_URL + '/employees`, { headers }),
-  fetch(import.meta.env.VITE_API_URL + '/shifts`, { headers }),
-  fetch(import.meta.env.VITE_API_URL + '/shift-swaps`, { headers }) 
-]);
+          fetch(import.meta.env.VITE_API_URL + '/employees', { headers }),
+          fetch(import.meta.env.VITE_API_URL + '/shifts', { headers }),
+          fetch(import.meta.env.VITE_API_URL + '/shift-swaps', { headers }) 
+        ]);
 
         if (resEmp.ok) setEmployees(await resEmp.json());
         if (resShifts.ok) setShifts(await resShifts.json());
@@ -35,19 +35,18 @@ export default function DashboardView() {
   const handleAction = async (id, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(import.meta.env.VITE_API_URL + '/shift-swaps/${id}`, {
+      const res = await fetch(import.meta.env.VITE_API_URL + '/shift-swaps/' + id, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ status: newStatus }) // 'approved' o 'rejected'
+        body: JSON.stringify({ status: newStatus }) 
       });
 
       if (res.ok) {
         const updatedReq = await res.json();
-        // Actualizamos la lista en pantalla instantáneamente
         setRequests(requests.map(r => r.id === id ? updatedReq : r));
       }
     } catch (error) {
@@ -70,16 +69,15 @@ export default function DashboardView() {
     const empShifts = shifts.filter(s => s.employee_id === emp.id);
     let totalHours = 0;
     empShifts.forEach(s => {
-      // Si el turno es de descanso o libre, no sumamos horas
       const shiftTitle = s.title || s.type || '';
       if (shiftTitle.toLowerCase() === 'descanso' || shiftTitle.toLowerCase() === 'libre') {
-        return; // Salta este turno sin sumar horas
+        return; 
       }
 
       const start = timeToNumber(s.start_time);
       const end = timeToNumber(s.end_time);
       let shiftHours = end - start;
-      if (shiftHours < 0) shiftHours += 24; // Para turnos que cruzan la medianoche
+      if (shiftHours < 0) shiftHours += 24; 
       totalHours += shiftHours;
     });
     return { ...emp, totalHours, shiftCount: empShifts.length };
@@ -213,7 +211,6 @@ export default function DashboardView() {
             )}
             
             {requests.map(req => {
-              // Cruzamos datos para saber de quién es el turno
               const emp = employees.find(e => e.id === req.requesting_employee_id);
               const shift = shifts.find(s => s.id === req.shift_id);
 
