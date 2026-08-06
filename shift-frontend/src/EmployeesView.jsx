@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Edit2, Trash2, X } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, X, Link as LinkIcon, MessageCircle } from 'lucide-react';
 
 export default function EmployeesView() {
   const [employees, setEmployees] = useState([]);
@@ -14,10 +14,10 @@ export default function EmployeesView() {
 
   const loadEmployees = async () => {
     try {
-      const token = localStorage.getItem('token'); // <-- ¡Agregamos la llave aquí!
+      const token = localStorage.getItem('token');
       const response = await fetch(import.meta.env.VITE_API_URL + '/employees', {
         headers: { 
-          'Authorization': 'Bearer ' + token, // <-- Se la mostramos al servidor
+          'Authorization': 'Bearer ' + token,
           'Accept': 'application/json'
         }
       });
@@ -72,7 +72,7 @@ export default function EmployeesView() {
 
     try {
       await fetch(import.meta.env.VITE_API_URL + '/employees/' + id, {
-        method: 'DELETE', // <-- Importante decirle que la acción es borrar
+        method: 'DELETE',
         headers: { 
           'Authorization': 'Bearer ' + token,
           'Accept': 'application/json'
@@ -82,6 +82,22 @@ export default function EmployeesView() {
     } catch (error) {
       console.error("Error al eliminar:", error);
     }
+  };
+
+  // --- NUEVAS FUNCIONES PARA COMPARTIR EL ENLACE MÁGICO ---
+
+  const handleCopyLink = (empId, empName) => {
+    // Genera la URL dinámica basada en el dominio actual donde estés (localhost o Vercel)
+    const url = `${window.location.origin}/empleado/${empId}`;
+    navigator.clipboard.writeText(url);
+    alert(`✅ Enlace copiado correctamente para ${empName}:\n\n${url}`);
+  };
+
+  const handleWhatsApp = (empId, empName) => {
+    const url = `${window.location.origin}/empleado/${empId}`;
+    const message = `Hola ${empName}, aquí tienes el enlace de tu portal para ver tus turnos y solicitar permisos:\n\n${url}`;
+    // Abre WhatsApp con el mensaje pre-cargado
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   return (
@@ -132,20 +148,38 @@ export default function EmployeesView() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6">
               {employees.length === 0 && <p className="col-span-2 text-center text-slate-500 py-8">Aún no tienes empleados registrados.</p>}
               {employees.map((emp) => (
-                <div key={emp.id} className="border border-slate-100 rounded-xl p-4 flex items-center justify-between group hover:border-slate-300 transition-colors bg-slate-50">
+                <div key={emp.id} className="border border-slate-100 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between group hover:border-slate-300 transition-colors bg-slate-50 gap-4">
+                  
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-sm" style={{ backgroundColor: emp.color }}>
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-sm shrink-0" style={{ backgroundColor: emp.color }}>
                       {emp.name.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800">{emp.name}</h4>
-                      <p className="text-sm font-medium text-slate-500">{emp.role}</p>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-slate-800 truncate">{emp.name}</h4>
+                      <p className="text-sm font-medium text-slate-500 truncate">{emp.role}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleEdit(emp)} className="p-2 text-slate-400 hover:text-state-blue bg-white rounded-lg border border-slate-200 hover:border-state-blue transition-colors" title="Editar"><Edit2 size={16} /></button>
-                    <button onClick={() => handleDelete(emp.id, emp.name)} className="p-2 text-slate-400 hover:text-state-red bg-white rounded-lg border border-slate-200 hover:border-state-red transition-colors" title="Eliminar"><Trash2 size={16} /></button>
+
+                  {/* NUEVOS BOTONES AÑADIDOS AQUÍ */}
+                  <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity justify-end">
+                    
+                    <button onClick={() => handleWhatsApp(emp.id, emp.name)} className="p-2 text-slate-400 hover:text-green-500 bg-white rounded-lg border border-slate-200 hover:border-green-500 transition-colors shadow-sm" title="Enviar por WhatsApp">
+                      <MessageCircle size={16} />
+                    </button>
+                    
+                    <button onClick={() => handleCopyLink(emp.id, emp.name)} className="p-2 text-slate-400 hover:text-state-purple bg-white rounded-lg border border-slate-200 hover:border-state-purple transition-colors shadow-sm" title="Copiar Enlace">
+                      <LinkIcon size={16} />
+                    </button>
+
+                    <button onClick={() => handleEdit(emp)} className="p-2 text-slate-400 hover:text-state-blue bg-white rounded-lg border border-slate-200 hover:border-state-blue transition-colors shadow-sm" title="Editar">
+                      <Edit2 size={16} />
+                    </button>
+                    
+                    <button onClick={() => handleDelete(emp.id, emp.name)} className="p-2 text-slate-400 hover:text-state-red bg-white rounded-lg border border-slate-200 hover:border-state-red transition-colors shadow-sm" title="Eliminar">
+                      <Trash2 size={16} />
+                    </button>
                   </div>
+
                 </div>
               ))}
             </div>
