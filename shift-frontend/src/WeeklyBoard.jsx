@@ -29,17 +29,27 @@ export default function WeeklyBoard() {
   const loadData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const headers = { 'Authorization': `Bearer ${token}` };
-      
+      const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' };
+
       const resEmp = await fetch(import.meta.env.VITE_API_URL + '/employees', { headers });
+      if (!resEmp.ok) throw new Error('No se pudieron cargar los empleados (' + resEmp.status + ')');
       setEmployees(await resEmp.json());
-      
+
       const resShifts = await fetch(import.meta.env.VITE_API_URL + '/shifts', { headers });
+      if (!resShifts.ok) throw new Error('No se pudieron cargar los turnos (' + resShifts.status + ')');
       setShifts(await resShifts.json());
 
       const resTypes = await fetch(import.meta.env.VITE_API_URL + '/shift-types', { headers });
+      if (!resTypes.ok) throw new Error('No se pudieron cargar los tipos de turno (' + resTypes.status + ')');
       setShiftTypes(await resTypes.json());
-    } catch (error) { console.error("Error cargando datos:", error); }
+    } catch (error) {
+      console.error("Error cargando datos:", error);
+      if (error.message.includes('401')) {
+        alert('Tu sesión expiró. Vuelve a iniciar sesión.');
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+    }
   };
 
   useEffect(() => { loadData(); }, []);

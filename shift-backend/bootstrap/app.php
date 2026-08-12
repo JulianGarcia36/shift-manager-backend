@@ -17,5 +17,14 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // FIX: sin esto, cuando un token no es válido en una ruta /api/*,
+        // Laravel intenta redirigir a una ruta llamada "login" que no
+        // existe en esta API (no es una app con vistas Blade), y eso
+        // provoca un error 500 en vez de un simple 401. Con esto, cualquier
+        // request a /api/* que no esté autenticado recibe un JSON limpio.
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => 'No autenticado. Inicia sesión de nuevo.'], 401);
+            }
+        });
     })->create();
