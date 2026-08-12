@@ -29,4 +29,15 @@ class PublicPortalController extends Controller
 
         return response()->json($shifts);
     }
+
+    // Historial de solicitudes de cambio de ESE empleado, para que vea si
+    // ya se las aprobaron o rechazaron.
+    public function shiftSwaps($token)
+    {
+        $employee = Employee::where('public_token', $token)->firstOrFail();
+
+        $swaps = $employee->shiftSwapRequests()->orderBy('created_at', 'desc')->get();
+
+        return response()->json($swaps);
+    }
 }

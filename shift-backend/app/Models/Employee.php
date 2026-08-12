@@ -33,4 +33,9 @@ class Employee extends Model
     {
         return $this->hasMany(Shift::class);
     }
+
+    public function shiftSwapRequests()
+    {
+        return $this->hasMany(ShiftSwap::class, 'requesting_employee_id');
+    }
 }

@@ -61,11 +61,16 @@ class ShiftSwapController extends Controller
         return response()->json($swap, 201);
     }
 
-    // 3. El Admin aprueba o rechaza el cambio
+    // 3. El Admin aprueba o rechaza el cambio, y decide qué pasa con el turno
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
             'status' => 'required|in:pending,approved,rejected',
+            // Qué hacer con el turno SOLO si status = approved:
+            // 'reassign'  -> se lo pasa a otro empleado (suggested_employee_id)
+            // 'unassign'  -> el turno queda sin nadie asignado (abierto)
+            // 'none'      -> no tocar el turno, solo marcar la solicitud como resuelta
+            'resolution_action' => 'nullable|in:reassign,unassign,none',
             'suggested_employee_id' => 'nullable|exists:employees,id',
         ]);
 
@@ -77,10 +82,18 @@ class ShiftSwapController extends Controller
         }
         $swap->save();
 
-        if ($swap->status === 'approved' && $swap->suggested_employee_id) {
+        if ($swap->status === 'approved') {
+            $action = $validated['resolution_action'] ?? 'none';
             $shift = Shift::find($swap->shift_id);
-            $shift->employee_id = $swap->suggested_employee_id;
-            $shift->save();
+
+            if ($shift && $action === 'reassign' && $swap->suggested_employee_id) {
+                $shift->employee_id = $swap->suggested_employee_id;
+                $shift->save();
+            } elseif ($shift && $action === 'unassign') {
+                $shift->employee_id = null;
+                $shift->save();
+            }
+            // 'none': no tocamos el turno, el admin ya lo resolvió de otra forma.
         }
 
         return response()->json($swap);

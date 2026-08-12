@@ -6,35 +6,41 @@ import { es } from 'date-fns/locale';
 export default function DashboardView() {
   const [employees, setEmployees] = useState([]);
   const [shifts, setShifts] = useState([]);
-  const [requests, setRequests] = useState([]); 
+  const [requests, setRequests] = useState([]);
+  // Guarda, por cada solicitud pendiente, qué acción eligió el admin
+  // (reassign / unassign / none) y a quién reasignar si aplica.
+  const [resolution, setResolution] = useState({});
 
   // Cargar todos los datos al entrar
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' };
-
-        const [resEmp, resShifts, resReq] = await Promise.all([
-          fetch(import.meta.env.VITE_API_URL + '/employees', { headers }),
-          fetch(import.meta.env.VITE_API_URL + '/shifts', { headers }),
-          fetch(import.meta.env.VITE_API_URL + '/shift-swaps', { headers }) 
-        ]);
-
-        if (resEmp.ok) setEmployees(await resEmp.json());
-        if (resShifts.ok) setShifts(await resShifts.json());
-        if (resReq.ok) setRequests(await resReq.json());
-      } catch (error) {
-        console.error("Error al cargar dashboard:", error);
-      }
-    };
-    loadDashboardData();
-  }, []);
-
-  // Función para aprobar o rechazar el cambio de turno
-  const handleAction = async (id, newStatus) => {
+  const loadDashboardData = async () => {
     try {
       const token = localStorage.getItem('token');
+      const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' };
+
+      const [resEmp, resShifts, resReq] = await Promise.all([
+        fetch(import.meta.env.VITE_API_URL + '/employees', { headers }),
+        fetch(import.meta.env.VITE_API_URL + '/shifts', { headers }),
+        fetch(import.meta.env.VITE_API_URL + '/shift-swaps', { headers })
+      ]);
+
+      if (resEmp.ok) setEmployees(await resEmp.json());
+      if (resShifts.ok) setShifts(await resShifts.json());
+      if (resReq.ok) setRequests(await resReq.json());
+    } catch (error) {
+      console.error("Error al cargar dashboard:", error);
+    }
+  };
+
+  useEffect(() => { loadDashboardData(); }, []);
+
+  // Función para aprobar o rechazar el cambio de turno
+  const handleAction = async (id, newStatus, resolutionAction = null, suggestedEmployeeId = null) => {
+    try {
+      const token = localStorage.getItem('token');
+      const body = { status: newStatus };
+      if (resolutionAction) body.resolution_action = resolutionAction;
+      if (suggestedEmployeeId) body.suggested_employee_id = suggestedEmployeeId;
+
       const res = await fetch(import.meta.env.VITE_API_URL + '/shift-swaps/' + id, {
         method: 'PUT',
         headers: {
@@ -42,12 +48,19 @@ export default function DashboardView() {
           'Accept': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ status: newStatus }) 
+        body: JSON.stringify(body)
       });
 
       if (res.ok) {
         const updatedReq = await res.json();
         setRequests(requests.map(r => r.id === id ? updatedReq : r));
+        // Si reasignamos o dejamos sin asignar, el turno cambió: recargamos
+        // para que "Turnos de Hoy" y "Horas Trabajadas" queden al día.
+        if (resolutionAction === 'reassign' || resolutionAction === 'unassign') {
+          loadDashboardData();
+        }
+      } else {
+        alert('No se pudo procesar la solicitud. Intenta de nuevo.');
       }
     } catch (error) {
       console.error("Error actualizando estado:", error);
@@ -221,15 +234,55 @@ export default function DashboardView() {
                     <span className="text-xs font-medium text-slate-500">{shift ? shift.date : ''}</span>
                   </div>
                   <p className="text-sm text-slate-600 mb-3">{req.reason}</p>
-                  
+
                   {req.status === 'pending' ? (
-                    <div className="flex gap-2">
-                      <button onClick={() => handleAction(req.id, 'approved')} className="flex-1 bg-green-100 hover:bg-green-200 text-green-700 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors">
-                        <CheckCircle size={14} /> Aprobar
-                      </button>
-                      <button onClick={() => handleAction(req.id, 'rejected')} className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors">
-                        <XCircle size={14} /> Rechazar
-                      </button>
+                    <div className="space-y-2">
+                      <select
+                        className="w-full text-xs font-medium border border-slate-200 rounded-lg py-1.5 px-2 bg-white"
+                        value={resolution[req.id]?.action || ''}
+                        onChange={(e) => setResolution({
+                          ...resolution,
+                          [req.id]: { action: e.target.value, employeeId: '' }
+                        })}
+                      >
+                        <option value="" disabled>Al aprobar, ¿qué hacemos con el turno?</option>
+                        <option value="reassign">Reasignar a otro empleado</option>
+                        <option value="unassign">Dejar el turno sin asignar</option>
+                        <option value="none">Ya lo resolví manualmente (no tocar el turno)</option>
+                      </select>
+
+                      {resolution[req.id]?.action === 'reassign' && (
+                        <select
+                          className="w-full text-xs font-medium border border-slate-200 rounded-lg py-1.5 px-2 bg-white"
+                          value={resolution[req.id]?.employeeId || ''}
+                          onChange={(e) => setResolution({
+                            ...resolution,
+                            [req.id]: { ...resolution[req.id], employeeId: e.target.value }
+                          })}
+                        >
+                          <option value="" disabled>¿A quién se lo asignamos?</option>
+                          {employees
+                            .filter(e => e.id !== req.requesting_employee_id)
+                            .map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                        </select>
+                      )}
+
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => {
+                            const choice = resolution[req.id];
+                            if (!choice?.action) { alert('Elige qué hacer con el turno antes de aprobar.'); return; }
+                            if (choice.action === 'reassign' && !choice.employeeId) { alert('Elige a quién reasignar el turno.'); return; }
+                            handleAction(req.id, 'approved', choice.action, choice.employeeId || null);
+                          }}
+                          className="flex-1 bg-green-100 hover:bg-green-200 text-green-700 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors"
+                        >
+                          <CheckCircle size={14} /> Aprobar
+                        </button>
+                        <button onClick={() => handleAction(req.id, 'rejected')} className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors">
+                          <XCircle size={14} /> Rechazar
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className={`text-xs font-bold px-3 py-1.5 rounded-lg text-center ${req.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>

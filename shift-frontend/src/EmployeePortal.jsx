@@ -38,25 +38,31 @@ export default function EmployeePortal() {
   const [reason, setReason] = useState('');
   const [successMsg, setSuccessMsg] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
+  const [mySwaps, setMySwaps] = useState([]);
+
+  const loadData = async () => {
+    try {
+      // El backend devuelve SOLO los datos de este empleado (filtrado
+      // por token en el servidor), no la lista completa de la empresa.
+      const resEmp = await fetch(import.meta.env.VITE_API_URL + '/public/employees/' + token);
+      if (!resEmp.ok) { setNotFound(true); return; }
+      const myEmp = await resEmp.json();
+      setEmployee(myEmp);
+
+      const resShifts = await fetch(import.meta.env.VITE_API_URL + '/public/employees/' + token + '/shifts');
+      const myShifts = resShifts.ok ? await resShifts.json() : [];
+      setShifts(myShifts);
+
+      const resSwaps = await fetch(import.meta.env.VITE_API_URL + '/public/employees/' + token + '/shift-swaps');
+      const swaps = resSwaps.ok ? await resSwaps.json() : [];
+      setMySwaps(swaps);
+    } catch (error) {
+      console.error("Error cargando portal:", error);
+      setNotFound(true);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        // El backend devuelve SOLO los datos de este empleado (filtrado
-        // por token en el servidor), no la lista completa de la empresa.
-        const resEmp = await fetch(import.meta.env.VITE_API_URL + '/public/employees/' + token);
-        if (!resEmp.ok) { setNotFound(true); return; }
-        const myEmp = await resEmp.json();
-        setEmployee(myEmp);
-
-        const resShifts = await fetch(import.meta.env.VITE_API_URL + '/public/employees/' + token + '/shifts');
-        const myShifts = resShifts.ok ? await resShifts.json() : [];
-        setShifts(myShifts);
-      } catch (error) {
-        console.error("Error cargando portal:", error);
-        setNotFound(true);
-      }
-    };
     if (token) loadData();
   }, [token]);
 
@@ -81,6 +87,7 @@ export default function EmployeePortal() {
         setSuccessMsg(true);
         setTimeout(() => setSuccessMsg(false), 4000);
         setReason('');
+        loadData();
       } else {
         const errorData = await res.text();
         console.error("Error devuelto por el servidor:", errorData);
@@ -173,6 +180,8 @@ export default function EmployeePortal() {
               events={calendarEvents}
               editable={false}
               selectable={false}
+              eventDisplay="list-item"
+              dayMaxEvents={3}
               eventClick={(info) => {
                 setSelectedShift(info.event.extendedProps);
                 setIsModalOpen(true);
@@ -208,6 +217,37 @@ export default function EmployeePortal() {
             </button>
           </div>
         ))}
+
+        {mySwaps.length > 0 && (
+          <>
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2 pt-4">
+              <AlertTriangle size={20} className="text-state-orange" />
+              Mis Solicitudes
+            </h2>
+            {mySwaps.map(swap => {
+              const swapShift = shifts.find(s => s.id === swap.shift_id);
+              const statusStyle = {
+                pending: 'bg-orange-100 text-orange-700',
+                approved: 'bg-green-100 text-green-700',
+                rejected: 'bg-red-100 text-red-700',
+              }[swap.status];
+              const statusLabel = {
+                pending: 'Pendiente',
+                approved: 'Aprobada',
+                rejected: 'Rechazada',
+              }[swap.status];
+              return (
+                <div key={swap.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                  <div className="flex justify-between items-start mb-1">
+                    <p className="font-bold text-slate-800 text-sm">{swapShift ? swapShift.date : 'Turno'}</p>
+                    <span className={`text-xs px-2 py-1 rounded-full font-bold ${statusStyle}`}>{statusLabel}</span>
+                  </div>
+                  <p className="text-sm text-slate-500">{swap.reason}</p>
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
 
       {isModalOpen && (
