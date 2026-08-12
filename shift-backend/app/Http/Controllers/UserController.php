@@ -33,9 +33,22 @@ class UserController extends Controller
     }
 
     // Eliminar un sub-administrador
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        User::findOrFail($id)->delete();
+        $user = User::findOrFail($id);
+
+        // Nunca permitir borrarse a uno mismo (te dejaría sin acceso)
+        if ($user->id === $request->user()->id) {
+            abort(422, 'No puedes eliminar tu propia cuenta.');
+        }
+
+        // Esta pantalla es solo para sub-admins; nunca borrar otro admin
+        // por aquí, aunque alguien mande su id directamente a la API.
+        if ($user->role !== 'subadmin') {
+            abort(422, 'Solo se pueden eliminar cuentas de sub-administrador.');
+        }
+
+        $user->delete();
         return response()->json(['message' => 'Eliminado correctamente']);
     }
 }

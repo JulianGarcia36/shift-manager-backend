@@ -28,22 +28,29 @@ class SettingController extends Controller
     // Guardar los cambios (Aquí estaba el bloqueador)
     public function update(Request $request)
     {
+        $validated = $request->validate([
+            'company_name' => 'required|string|max:255',
+            'industry' => 'nullable|string|max:255',
+            'start_day' => 'required|string',
+            'open_time' => 'required|string',
+            'close_time' => 'required|string',
+            'logo' => 'nullable|string', // base64; el tamaño ya lo limita la columna LONGTEXT
+        ]);
+
         $setting = Setting::first();
         
         if (!$setting) {
             $setting = new Setting();
         }
 
-        // Le ordenamos a Laravel que guarde cada campo sin excepción
-        $setting->company_name = $request->company_name;
-        $setting->industry = $request->industry;
-        $setting->start_day = $request->start_day;
-        $setting->open_time = $request->open_time;
-        $setting->close_time = $request->close_time;
-        
-        // El permiso especial para el logo
-        if ($request->has('logo')) {
-            $setting->logo = $request->logo;
+        $setting->company_name = $validated['company_name'];
+        $setting->industry = $validated['industry'] ?? null;
+        $setting->start_day = $validated['start_day'];
+        $setting->open_time = $validated['open_time'];
+        $setting->close_time = $validated['close_time'];
+
+        if (array_key_exists('logo', $validated)) {
+            $setting->logo = $validated['logo'];
         }
 
         $setting->save();
