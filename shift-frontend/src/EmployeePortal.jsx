@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function EmployeePortal() {
-  const employeeId = window.location.pathname.split('/').pop();
+  // El token va en la URL (/empleado/:token), no un id adivinable.
+  const token = window.location.pathname.split('/').pop();
 
   const [employee, setEmployee] = useState(null);
   const [shifts, setShifts] = useState([]);
+  const [notFound, setNotFound] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedShift, setSelectedShift] = useState(null);
   const [reason, setReason] = useState('');
@@ -14,36 +16,36 @@ export default function EmployeePortal() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const resEmp = await fetch(import.meta.env.VITE_API_URL + '/employees');
-        const allEmps = await resEmp.json();
-        const myEmp = allEmps.find(e => e.id === parseInt(employeeId));
+        // El backend devuelve SOLO los datos de este empleado (filtrado
+        // por token en el servidor), no la lista completa de la empresa.
+        const resEmp = await fetch(import.meta.env.VITE_API_URL + '/public/employees/' + token);
+        if (!resEmp.ok) { setNotFound(true); return; }
+        const myEmp = await resEmp.json();
         setEmployee(myEmp);
 
-        const resShifts = await fetch(import.meta.env.VITE_API_URL + '/shifts');
-        const allShifts = await resShifts.json();
-        const myShifts = allShifts.filter(s => s.employee_id === parseInt(employeeId));
-        
-        myShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const resShifts = await fetch(import.meta.env.VITE_API_URL + '/public/employees/' + token + '/shifts');
+        const myShifts = resShifts.ok ? await resShifts.json() : [];
         setShifts(myShifts);
-      } catch(error) { 
-        console.error("Error cargando portal:", error); 
+      } catch (error) {
+        console.error("Error cargando portal:", error);
+        setNotFound(true);
       }
     };
-    if(employeeId) loadData();
-  }, [employeeId]);
+    if (token) loadData();
+  }, [token]);
 
   const handleRequestSwap = async (e) => {
     e.preventDefault();
     try {
       const res = await fetch(import.meta.env.VITE_API_URL + '/public-shift-swaps', {
         method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json', 
-            'Accept': 'application/json' 
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
         },
         body: JSON.stringify({
           shift_id: selectedShift.id,
-          requesting_employee_id: employee.id,
+          token: token,
           reason: reason
         })
       });
@@ -62,6 +64,14 @@ export default function EmployeePortal() {
       alert("⚠️ Hubo un error crítico de conexión con el servidor.");
     }
   };
+
+  if (notFound) {
+    return (
+      <div className="p-8 text-center text-slate-500 font-medium">
+        Este enlace no es válido. Pide a tu administrador que te envíe uno nuevo.
+      </div>
+    );
+  }
 
   if (!employee) return <div className="p-8 text-center text-slate-500 font-medium">Cargando tu portal...</div>;
 

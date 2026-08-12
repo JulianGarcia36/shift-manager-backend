@@ -86,15 +86,15 @@ export default function EmployeesView() {
 
   // --- NUEVAS FUNCIONES PARA COMPARTIR EL ENLACE MÁGICO ---
 
-  const handleCopyLink = (empId, empName) => {
+  const handleCopyLink = (empToken, empName) => {
     // Genera la URL dinámica basada en el dominio actual donde estés (localhost o Vercel)
-    const url = `${window.location.origin}/empleado/${empId}`;
+    const url = `${window.location.origin}/empleado/${empToken}`;
     navigator.clipboard.writeText(url);
     alert(`✅ Enlace copiado correctamente para ${empName}:\n\n${url}`);
   };
 
-  const handleWhatsApp = (empId, empName) => {
-    const url = `${window.location.origin}/empleado/${empId}`;
+  const handleWhatsApp = (empToken, empName) => {
+    const url = `${window.location.origin}/empleado/${empToken}`;
     const message = `Hola ${empName}, aquí tienes el enlace de tu portal para ver tus turnos y solicitar permisos:\n\n${url}`;
     // Abre WhatsApp con el mensaje pre-cargado
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
@@ -163,11 +163,11 @@ export default function EmployeesView() {
                   {/* NUEVOS BOTONES AÑADIDOS AQUÍ */}
                   <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity justify-end">
                     
-                    <button onClick={() => handleWhatsApp(emp.id, emp.name)} className="p-2 text-slate-400 hover:text-green-500 bg-white rounded-lg border border-slate-200 hover:border-green-500 transition-colors shadow-sm" title="Enviar por WhatsApp">
+                    <button onClick={() => handleWhatsApp(emp.public_token, emp.name)} className="p-2 text-slate-400 hover:text-green-500 bg-white rounded-lg border border-slate-200 hover:border-green-500 transition-colors shadow-sm" title="Enviar por WhatsApp">
                       <MessageCircle size={16} />
                     </button>
                     
-                    <button onClick={() => handleCopyLink(emp.id, emp.name)} className="p-2 text-slate-400 hover:text-state-purple bg-white rounded-lg border border-slate-200 hover:border-state-purple transition-colors shadow-sm" title="Copiar Enlace">
+                    <button onClick={() => handleCopyLink(emp.public_token, emp.name)} className="p-2 text-slate-400 hover:text-state-purple bg-white rounded-lg border border-slate-200 hover:border-state-purple transition-colors shadow-sm" title="Copiar Enlace">
                       <LinkIcon size={16} />
                     </button>
 

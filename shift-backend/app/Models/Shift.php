@@ -9,11 +9,11 @@ class Shift extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['employee_id', 'date', 'start_time', 'end_time', 'type', 'color'];
-
-    // Relación: Un turno pertenece a un empleado
-    public function employee()
-    {
-        return $this->belongsTo(Employee::class);
-    }
-}
+    protected $fillable = [
+    'employee_id', 
+    'date', 
+    'start_time', 
+    'end_time', 
+    'type', 
+    'color'
+];

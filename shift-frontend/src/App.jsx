@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './DashboardLayout';
 import WeeklyBoard from './WeeklyBoard';
-import EmployeePublicView from './EmployeePublicView';
 import EmployeesView from './EmployeesView';
 import DashboardView from './DashboardView';
 import LoginView from './LoginView';
@@ -27,11 +26,9 @@ function App() {
           <Route path="settings" element={<SettingsView />} />
         </Route>
 
-        {/* --- RUTAS PÚBLICAS (Enlaces Mágicos para Empleados) --- */}
-        <Route path="/s/:employeeId" element={<EmployeePublicView />} />
-        
-        {/* <-- ¡Aquí habilitamos el Portal Interactivo del empleado! */}
-        <Route path="/empleado/:id" element={<EmployeePortal />} />
+        {/* --- RUTA PÚBLICA (Enlace Mágico para Empleados) ---
+            Usa un token aleatorio e impredecible, no el id del empleado. */}
+        <Route path="/empleado/:token" element={<EmployeePortal />} />
       </Routes>
     </BrowserRouter>
   );

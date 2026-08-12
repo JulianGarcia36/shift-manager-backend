@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ShiftSwap;
+use App\Models\Employee;
 use App\Models\Shift;
+use App\Models\ShiftSwap;
 use Illuminate\Http\Request;
 
 class ShiftSwapController extends Controller
@@ -11,11 +12,40 @@ class ShiftSwapController extends Controller
     // 1. El Admin ve todas las peticiones
     public function index()
     {
-        return response()->json(ShiftSwap::all()); 
+        return response()->json(ShiftSwap::all());
     }
 
-    // NUEVO: Método exclusivo y garantizado para el buzón público
+    // Buzón PÚBLICO (sin login): el empleado usa su token, no un id.
+    // Así el servidor verifica que el turno realmente sea suyo, en vez de
+    // confiar en un employee_id que cualquiera podría inventar.
     public function publicStore(Request $request)
+    {
+        $validated = $request->validate([
+            'shift_id' => 'required|exists:shifts,id',
+            'token'    => 'required|string',
+            'reason'   => 'nullable|string',
+        ]);
+
+        $employee = Employee::where('public_token', $validated['token'])->firstOrFail();
+        $shift = Shift::findOrFail($validated['shift_id']);
+
+        if ((int) $shift->employee_id !== (int) $employee->id) {
+            abort(403, 'No puedes solicitar un cambio para un turno que no es tuyo.');
+        }
+
+        $swap = ShiftSwap::create([
+            'shift_id' => $shift->id,
+            'requesting_employee_id' => $employee->id,
+            'reason' => $validated['reason'] ?? null,
+            'status' => 'pending',
+        ]);
+
+        return response()->json($swap, 201);
+    }
+
+    // Crear una solicitud desde el panel de administración (usuario ya
+    // autenticado, así que aquí sí confiamos en el employee_id explícito).
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'shift_id' => 'required|exists:shifts,id',
@@ -27,13 +57,8 @@ class ShiftSwapController extends Controller
             ...$validated,
             'status' => 'pending',
         ]);
-        return response()->json($swap, 201);
-    }
 
-    // El Empleado envía la alerta (Versión protegida)
-    public function store(Request $request)
-    {
-        return $this->publicStore($request);
+        return response()->json($swap, 201);
     }
 
     // 3. El Admin aprueba o rechaza el cambio

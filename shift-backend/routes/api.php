@@ -6,32 +6,41 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ShiftSwapController;
+use App\Http\Controllers\PublicPortalController;
 
 // ----------------------------------------------------
 // RUTAS PÚBLICAS (No requieren estar logueado)
 // ----------------------------------------------------
-Route::post('/login', [AuthController::class, 'login']);
-Route::get('/shifts', [ShiftController::class, 'index']); // Los empleados ven el calendario
-Route::get('/employees', [EmployeeController::class, 'index']); // Los empleados ven la lista
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 
-// Buzón público para que los empleados envíen alertas sin token (100% libre)
+// Portal público por empleado: SOLO datos de ESE empleado (filtrado en el
+// servidor con su token, no la lista completa de la empresa).
+Route::get('/public/employees/{token}', [PublicPortalController::class, 'show']);
+Route::get('/public/employees/{token}/shifts', [PublicPortalController::class, 'shifts']);
+
+// Buzón público para que los empleados soliciten cambios de turno.
+// Verifica identidad por token en el controlador (ver ShiftSwapController).
 Route::post('/public-shift-swaps', [ShiftSwapController::class, 'publicStore']);
 
 
 // ----------------------------------------------------
-// RUTAS PROTEGIDAS (Solo el Admin logueado puede entrar)
+// RUTAS PROTEGIDAS (Solo el Admin/Sub-admin logueado puede entrar)
 // ----------------------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // Autenticación
     Route::post('/logout', [AuthController::class, 'logout']);
-    
-    // Empleados (Crear, actualizar, eliminar)
+
+    // Empleados: listar (panel admin), crear, actualizar, eliminar.
+    // Antes /employees (index) era público; ahora requiere estar logueado.
+    Route::get('/employees', [EmployeeController::class, 'index']);
     Route::post('/employees', [EmployeeController::class, 'store']);
     Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
     Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy']);
-    
-    // Turnos del calendario (Crear, actualizar, eliminar)
+
+    // Turnos del calendario: listar (panel admin), crear, actualizar, eliminar.
+    // Antes /shifts (index) era público; ahora requiere estar logueado.
+    Route::get('/shifts', [ShiftController::class, 'index']);
     Route::post('/shifts', [ShiftController::class, 'store']);
     Route::put('/shifts/{shift}', [ShiftController::class, 'update']);
     Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy']);
@@ -50,9 +59,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Seguridad (Cambiar contraseña)
     Route::put('/user/password', [App\Http\Controllers\SecurityController::class, 'updatePassword']);
 
-    // Gestión de Sub-administradores
-    Route::apiResource('users', App\Http\Controllers\UserController::class)->except(['show', 'update']);
+    // Gestión de Sub-administradores: solo un admin puede crear/eliminar otros.
+    // Antes cualquier usuario logueado (incluido un sub-admin) podía hacerlo.
+    Route::middleware('admin')->group(function () {
+        Route::apiResource('users', App\Http\Controllers\UserController::class)->except(['show', 'update']);
+    });
 
-    // DIRECCIÓN WEB (Gestión de Intercambios para el Admin)
+    // Gestión de Intercambios para el Admin
     Route::apiResource('shift-swaps', ShiftSwapController::class);
 });
