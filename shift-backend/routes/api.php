@@ -15,8 +15,11 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,
 
 // Portal público por empleado: SOLO datos de ESE empleado (filtrado en el
 // servidor con su token, no la lista completa de la empresa).
-Route::get('/public/employees/{token}', [PublicPortalController::class, 'show']);
-Route::get('/public/employees/{token}/shifts', [PublicPortalController::class, 'shifts']);
+// throttle: límite de intentos, ya que el token es corto y legible.
+Route::middleware('throttle:30,1')->group(function () {
+    Route::get('/public/employees/{token}', [PublicPortalController::class, 'show']);
+    Route::get('/public/employees/{token}/shifts', [PublicPortalController::class, 'shifts']);
+});
 
 // Buzón público para que los empleados soliciten cambios de turno.
 // Verifica identidad por token en el controlador (ver ShiftSwapController).

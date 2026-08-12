@@ -1,5 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, AlertTriangle, CheckCircle, List, CalendarDays } from 'lucide-react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import esLocale from '@fullcalendar/core/locales/es';
+
+// Mismos colores que usa el calendario del admin, para que se vea igual.
+const colorMap = {
+  'bg-state-blue': '#3b82f6',
+  'bg-state-green': '#10b981',
+  'bg-state-purple': '#8b5cf6',
+  'bg-state-orange': '#f97316',
+  'bg-state-red': '#ef4444'
+};
+
+// Convierte "08:00 AM" + "2026-08-07" a formato ISO que entiende FullCalendar
+const convertToISO = (dateStr, timeStr) => {
+  if (!timeStr) return null;
+  const [time, modifier] = timeStr.split(' ');
+  if (!modifier) return `${dateStr}T${timeStr.slice(0, 5)}:00`; // ya viene en 24h
+  let [hours, minutes] = time.split(':');
+  if (modifier === 'PM' && hours !== '12') hours = (parseInt(hours, 10) + 12).toString();
+  if (modifier === 'AM' && hours === '12') hours = '00';
+  return `${dateStr}T${hours.padStart(2, '0')}:${minutes}:00`;
+};
 
 export default function EmployeePortal() {
   // El token va en la URL (/empleado/:token), no un id adivinable.
@@ -12,6 +37,7 @@ export default function EmployeePortal() {
   const [selectedShift, setSelectedShift] = useState(null);
   const [reason, setReason] = useState('');
   const [successMsg, setSuccessMsg] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
 
   useEffect(() => {
     const loadData = async () => {
@@ -75,6 +101,17 @@ export default function EmployeePortal() {
 
   if (!employee) return <div className="p-8 text-center text-slate-500 font-medium">Cargando tu portal...</div>;
 
+  // Eventos para FullCalendar (mismo formato que usa el calendario del admin)
+  const calendarEvents = shifts.map(shift => ({
+    id: shift.id,
+    title: shift.start_time === '00:00:00' ? 'Descanso' : (shift.type || 'Turno'),
+    start: convertToISO(shift.date, shift.start_time),
+    end: convertToISO(shift.date, shift.end_time),
+    backgroundColor: colorMap[shift.color] || '#3b82f6',
+    borderColor: 'transparent',
+    extendedProps: { ...shift }
+  }));
+
   return (
     <div className="max-w-md mx-auto min-h-screen bg-slate-50 relative pb-10">
       
@@ -91,10 +128,29 @@ export default function EmployeePortal() {
       </div>
 
       <div className="px-4 space-y-4">
-        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <Calendar size={20} className="text-state-blue" />
-          Tus Próximos Turnos
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Calendar size={20} className="text-state-blue" />
+            Tus Turnos
+          </h2>
+
+          <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-state-blue text-white' : 'text-slate-400'}`}
+              title="Ver como lista"
+            >
+              <List size={16} />
+            </button>
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'calendar' ? 'bg-state-blue text-white' : 'text-slate-400'}`}
+              title="Ver como calendario"
+            >
+              <CalendarDays size={16} />
+            </button>
+          </div>
+        </div>
 
         {shifts.length === 0 && (
           <p className="text-center text-slate-400 py-8 bg-white rounded-2xl border border-slate-200 shadow-sm">
@@ -102,7 +158,34 @@ export default function EmployeePortal() {
           </p>
         )}
 
-        {shifts.map(shift => (
+        {shifts.length > 0 && viewMode === 'calendar' && (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 overflow-hidden">
+            <FullCalendar
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView="timeGridWeek"
+              headerToolbar={{
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+              }}
+              buttonText={{ today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día' }}
+              locale={esLocale}
+              events={calendarEvents}
+              editable={false}
+              selectable={false}
+              eventClick={(info) => {
+                setSelectedShift(info.event.extendedProps);
+                setIsModalOpen(true);
+              }}
+              slotMinTime="06:00:00"
+              slotMaxTime="24:00:00"
+              allDaySlot={false}
+              height="auto"
+            />
+          </div>
+        )}
+
+        {viewMode === 'list' && shifts.map(shift => (
           <div key={shift.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
             <div className="flex justify-between items-start mb-3">
               <div>

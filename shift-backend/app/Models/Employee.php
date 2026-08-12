@@ -21,7 +21,10 @@ class Employee extends Model
 
         static::creating(function (Employee $employee) {
             if (empty($employee->public_token)) {
-                $employee->public_token = Str::random(32);
+                // 10 caracteres al azar (~59 bits de entropía) — imposible
+                // de adivinar por fuerza bruta, pero bastante más corto y
+                // legible que el token original de 32 caracteres.
+                $employee->public_token = Str::random(10);
             }
         });
     }

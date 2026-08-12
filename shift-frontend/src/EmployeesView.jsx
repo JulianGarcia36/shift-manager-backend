@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Plus, Edit2, Trash2, X, Link as LinkIcon, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Users, Plus, Edit2, Trash2, X, Link as LinkIcon, MessageCircle, QrCode } from 'lucide-react';
+import QRCode from 'qrcode';
 
 export default function EmployeesView() {
   const [employees, setEmployees] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  
+  const [qrModal, setQrModal] = useState(null); // { url, name } | null
+  const qrCanvasRef = useRef(null);
+
   const [formData, setFormData] = useState({
     name: '',
     role: '',
@@ -100,6 +103,22 @@ export default function EmployeesView() {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleShowQr = (empToken, empName) => {
+    const url = `${window.location.origin}/empleado/${empToken}`;
+    setQrModal({ url, name: empName });
+  };
+
+  // Dibuja el QR en el <canvas> cada vez que se abre el modal.
+  // Se genera 100% en el navegador (librería 'qrcode'), sin mandar
+  // el enlace del empleado a ningún servicio externo.
+  useEffect(() => {
+    if (qrModal && qrCanvasRef.current) {
+      QRCode.toCanvas(qrCanvasRef.current, qrModal.url, { width: 240, margin: 2 }, (error) => {
+        if (error) console.error('Error generando el QR:', error);
+      });
+    }
+  }, [qrModal]);
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3 mb-6">
@@ -166,7 +185,11 @@ export default function EmployeesView() {
                     <button onClick={() => handleWhatsApp(emp.public_token, emp.name)} className="p-2 text-slate-400 hover:text-green-500 bg-white rounded-lg border border-slate-200 hover:border-green-500 transition-colors shadow-sm" title="Enviar por WhatsApp">
                       <MessageCircle size={16} />
                     </button>
-                    
+
+                    <button onClick={() => handleShowQr(emp.public_token, emp.name)} className="p-2 text-slate-400 hover:text-state-blue bg-white rounded-lg border border-slate-200 hover:border-state-blue transition-colors shadow-sm" title="Mostrar código QR">
+                      <QrCode size={16} />
+                    </button>
+
                     <button onClick={() => handleCopyLink(emp.public_token, emp.name)} className="p-2 text-slate-400 hover:text-state-purple bg-white rounded-lg border border-slate-200 hover:border-state-purple transition-colors shadow-sm" title="Copiar Enlace">
                       <LinkIcon size={16} />
                     </button>
@@ -186,6 +209,19 @@ export default function EmployeesView() {
           </div>
         </div>
       </div>
+
+      {qrModal && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={() => setQrModal(null)}>
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-xs w-full text-center" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-slate-800 mb-1">Portal de {qrModal.name}</h3>
+            <p className="text-sm text-slate-500 mb-4">Escanea con la cámara del celular</p>
+            <canvas ref={qrCanvasRef} className="mx-auto rounded-xl border border-slate-200" />
+            <button onClick={() => setQrModal(null)} className="mt-4 w-full py-2.5 rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
